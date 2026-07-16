@@ -26,7 +26,10 @@ fun WhitelistScreen(viewModel: WhitelistViewModel) {
                     IconButton(onClick = { expanded = true }) {
                         Icon(Icons.Default.Search, contentDescription = "搜索")
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
                         TextField(
                             value = query,
                             onValueChange = viewModel::onSearchQueryChanged,
