@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.*
-import com.nexusroot.manager.data.MockDaemonConnector
+import com.nexusroot.manager.data.SocketDaemonConnector
 import com.nexusroot.manager.ui.diagnostics.DiagnosticsScreen
 import com.nexusroot.manager.ui.diagnostics.DiagnosticsViewModel
 import com.nexusroot.manager.ui.home.HomeScreen
@@ -28,7 +28,8 @@ class MainActivity : ComponentActivity() {
         setContent {
             NexusRootTheme {
                 val navController = rememberNavController()
-                val connector = remember { MockDaemonConnector() }
+                // 使用真实的 Socket 连接，如果 daemon 未启动可能连接失败，可添加重试逻辑
+                val connector = remember { SocketDaemonConnector() }
 
                 Scaffold(
                     bottomBar = {
