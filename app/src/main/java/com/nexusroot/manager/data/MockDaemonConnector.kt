@@ -1,30 +1,16 @@
-// DaemonConnector.kt (接口)
 package com.nexusroot.manager.data
 
 import com.nexusroot.manager.data.model.DaemonStatus
 import com.nexusroot.manager.data.model.WhitelistItem
 import com.nexusroot.manager.data.model.LogEntry
-import kotlinx.coroutines.flow.Flow
-
-interface DaemonConnector {
-    val daemonStatusFlow: Flow<DaemonStatus>
-    val whitelistFlow: Flow<List<WhitelistItem>>
-    val logFlow: Flow<LogEntry>
-
-    suspend fun updateWhitelist(packageName: String, allowed: Boolean)
-    suspend fun refreshDiagnostics(): Map<String, Any> // 返回诊断数据
-}
-
-// MockDaemonConnector.kt
-package com.nexusroot.manager.data
-
-import com.nexusroot.manager.data.model.*
+import com.nexusroot.manager.data.model.LogType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
 
 class MockDaemonConnector : DaemonConnector {
+
     private val _status = MutableStateFlow(
         DaemonStatus(
             daemonAlive = true,
@@ -65,7 +51,7 @@ class MockDaemonConnector : DaemonConnector {
     }
 
     override suspend fun refreshDiagnostics(): Map<String, Any> {
-        delay(500) // 模拟网络延迟
+        delay(500)
         return mapOf(
             "daemon_pid" to 1234,
             "socket_connected" to true,
