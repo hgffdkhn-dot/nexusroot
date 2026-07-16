@@ -21,12 +21,16 @@ fun LogsScreen(viewModel: LogsViewModel) {
             Column {
                 TopAppBar(title = { Text("日志") })
                 TabRow(selectedTabIndex = if (state.selectedTab == LogType.SU) 0 else 1) {
-                    Tab(selected = state.selectedTab == LogType.SU,
+                    Tab(
+                        selected = state.selectedTab == LogType.SU,
                         onClick = { viewModel.selectTab(LogType.SU) },
-                        text = { Text("超级用户") })
-                    Tab(selected = state.selectedTab == LogType.MANAGER,
+                        text = { Text("超级用户") }
+                    )
+                    Tab(
+                        selected = state.selectedTab == LogType.MANAGER,
                         onClick = { viewModel.selectTab(LogType.MANAGER) },
-                        text = { Text("管理器") })
+                        text = { Text("管理器") }
+                    )
                 }
             }
         }
@@ -38,7 +42,7 @@ fun LogsScreen(viewModel: LogsViewModel) {
                     headlineContent = { Text(log.message) },
                     supportingContent = { Text("${log.tag} | ${sdf.format(Date(log.timestamp))}") }
                 )
-                Divider()
+                HorizontalDivider()
             }
         }
     }
