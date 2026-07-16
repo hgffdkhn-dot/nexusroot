@@ -24,10 +24,12 @@ jobs:
           java-version: '17'
 
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v3
+        uses: gradle/actions/setup-gradle@v3
         with:
-          gradle-version: '8.2'   # 关键：自动下载 Gradle 8.2
-          arguments: assembleDebug
+          gradle-version: '8.2'
+
+      - name: Build APK
+        run: gradle assembleDebug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
