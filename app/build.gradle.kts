@@ -1,4 +1,3 @@
-// nexusroot-manager/app/build.gradle.kts
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -49,6 +48,9 @@ android {
 }
 
 dependencies {
+    // AndroidX AppCompat (提供 Theme.AppCompat.DayNight.NoActionBar)
+    implementation("androidx.appcompat:appcompat:1.6.1")
+
     // Core Android
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
