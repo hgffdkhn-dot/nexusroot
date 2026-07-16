@@ -6,11 +6,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.nexusroot.manager.data.model.LogType
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsScreen(viewModel: LogsViewModel) {
     val state by viewModel.uiState.collectAsState()
@@ -40,9 +40,11 @@ fun LogsScreen(viewModel: LogsViewModel) {
                 val sdf = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
                 ListItem(
                     headlineContent = { Text(log.message) },
-                    supportingContent = { Text("${log.tag} | ${sdf.format(Date(log.timestamp))}") }
+                    supportingContent = {
+                        Text("${log.tag} | ${sdf.format(Date(log.timestamp))}")
+                    }
                 )
-                HorizontalDivider()
+                Divider()
             }
         }
     }
