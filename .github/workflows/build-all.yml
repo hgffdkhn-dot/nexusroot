@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [aarch64-linux-android, armv7-linux-androideabi, x86_64-linux-android, i686-linux-android]
+        target: [arm64-v8a, armeabi-v7a, x86_64, x86]
     steps:
       - uses: actions/checkout@v4
 
@@ -34,27 +34,34 @@ jobs:
       - name: Build APK
         run: gradle assembleDebug
 
-      - name: Install Rust targets
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
+
+      - name: Install cargo-ndk and protoc
         run: |
-          rustup target add ${{ matrix.target }}
+          cargo install cargo-ndk
+          sudo apt-get update && sudo apt-get install -y protobuf-compiler
 
-      - name: Install protoc
-        run: sudo apt-get update && sudo apt-get install -y protobuf-compiler
-
-      - name: Build Rust daemon
+      - name: Build daemon
         working-directory: ./daemon
         run: |
-          cargo build --release --target ${{ matrix.target }}
+          cargo ndk \
+            -t ${{ matrix.target }} \
+            -o ../dist/daemon \
+            build --release
 
       - name: Collect artifacts
         run: |
-          mkdir -p dist/${{ matrix.target }}
-          cp app/build/outputs/apk/debug/app-debug.apk dist/${{ matrix.target }}/
-          cp target/${{ matrix.target }}/release/nexusrootd dist/${{ matrix.target }}/ 2>/dev/null || true
-          cp tools/detect_device.sh dist/${{ matrix.target }}/ 2>/dev/null || true
+          mkdir -p dist/final/${{ matrix.target }}
+          cp app/build/outputs/apk/debug/app-debug.apk dist/final/${{ matrix.target }}/
+          cp -r dist/daemon/${{ matrix.target }}/* dist/final/${{ matrix.target }}/ 2>/dev/null || true
+          cp tools/detect_device.sh dist/final/${{ matrix.target }}/ 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nexusroot-${{ matrix.target }}
-          path: dist/${{ matrix.target }}/*
+          path: dist/final/${{ matrix.target }}/*
