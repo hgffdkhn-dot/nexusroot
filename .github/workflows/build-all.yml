@@ -11,7 +11,15 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        target: [arm64-v8a, armeabi-v7a, x86_64, x86]
+        include:
+          - rust_target: aarch64-linux-android
+            android_abi: arm64-v8a
+          - rust_target: armv7-linux-androideabi
+            android_abi: armeabi-v7a
+          - rust_target: x86_64-linux-android
+            android_abi: x86_64
+          - rust_target: i686-linux-android
+            android_abi: x86
     steps:
       - uses: actions/checkout@v4
 
@@ -20,11 +28,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          packages: 'platforms;android-34'
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -35,10 +38,9 @@ jobs:
         run: gradle assembleDebug
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: stable
-          target: ${{ matrix.target }}
+          targets: ${{ matrix.rust_target }}
 
       - name: Install cargo-ndk and protoc
         run: |
@@ -49,19 +51,19 @@ jobs:
         working-directory: ./daemon
         run: |
           cargo ndk \
-            -t ${{ matrix.target }} \
-            -o ../dist/daemon \
+            -t ${{ matrix.rust_target }} \
+            -o ../dist/daemon/${{ matrix.android_abi }} \
             build --release
 
       - name: Collect artifacts
         run: |
-          mkdir -p dist/final/${{ matrix.target }}
-          cp app/build/outputs/apk/debug/app-debug.apk dist/final/${{ matrix.target }}/
-          cp -r dist/daemon/${{ matrix.target }}/* dist/final/${{ matrix.target }}/ 2>/dev/null || true
-          cp tools/detect_device.sh dist/final/${{ matrix.target }}/ 2>/dev/null || true
+          mkdir -p dist/final/${{ matrix.android_abi }}
+          cp app/build/outputs/apk/debug/app-debug.apk dist/final/${{ matrix.android_abi }}/
+          cp -r dist/daemon/${{ matrix.android_abi }}/* dist/final/${{ matrix.android_abi }}/ 2>/dev/null || true
+          cp tools/detect_device.sh dist/final/${{ matrix.android_abi }}/ 2>/dev/null || true
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nexusroot-${{ matrix.target }}
-          path: dist/final/${{ matrix.target }}/*
+          name: nexusroot-${{ matrix.android_abi }}
+          path: dist/final/${{ matrix.android_abi }}/*
