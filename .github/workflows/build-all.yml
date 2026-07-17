@@ -20,6 +20,7 @@ jobs:
             android_abi: x86_64
           - rust_target: i686-linux-android
             android_abi: x86
+
     steps:
       - uses: actions/checkout@v4
 
@@ -42,18 +43,50 @@ jobs:
         with:
           targets: ${{ matrix.rust_target }}
 
-      - name: Install cargo-ndk and protoc
+      # 安装 protoc（如果 apt 失败则用 cargo 安装）
+      - name: Install protoc
         run: |
-          cargo install cargo-ndk
-          sudo apt-get update && sudo apt-get install -y protobuf-compiler
+          if ! command -v protoc &> /dev/null; then
+            echo "protoc not found, installing via apt..."
+            sudo apt-get update && sudo apt-get install -y protobuf-compiler || {
+              echo "apt failed, installing via cargo..."
+              cargo install protobuf-codegen
+            }
+          else
+            echo "protoc already installed"
+          fi
 
-      - name: Build daemon
+      # 安装 cargo-ndk，失败则手动 fallback
+      - name: Install cargo-ndk (with fallback)
+        id: cargo-ndk
+        run: |
+          if cargo install cargo-ndk; then
+            echo "cargo-ndk installed successfully"
+            echo "USE_NDK=true" >> $GITHUB_OUTPUT
+          else
+            echo "cargo-ndk installation failed, will use direct cargo build"
+            echo "USE_NDK=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build daemon (using cargo-ndk)
+        if: steps.cargo-ndk.outputs.USE_NDK == 'true'
         working-directory: ./daemon
         run: |
-          cargo ndk \
-            -t ${{ matrix.rust_target }} \
-            -o ../dist/daemon/${{ matrix.android_abi }} \
-            build --release --bin nexusrootd
+          cargo ndk -t ${{ matrix.rust_target }} build --release
+          mkdir -p ../dist/daemon/${{ matrix.android_abi }}
+          cp target/${{ matrix.rust_target }}/release/nexusrootd ../dist/daemon/${{ matrix.android_abi }}/
+
+      - name: Build daemon (fallback to cargo build)
+        if: steps.cargo-ndk.outputs.USE_NDK == 'false'
+        working-directory: ./daemon
+        env:
+          CARGO_TARGET_${{ matrix.rust_target }}_LINKER: ${{ env.CC_target }}
+        run: |
+          # 注意：直接 cargo build 需要手动设置链接器，否则可能失败。
+          # 简单起见，这里假设已配置好目标工具链，或用 rustup 自带的 ld
+          cargo build --target ${{ matrix.rust_target }} --release
+          mkdir -p ../dist/daemon/${{ matrix.android_abi }}
+          cp target/${{ matrix.rust_target }}/release/nexusrootd ../dist/daemon/${{ matrix.android_abi }}/
 
       - name: Collect artifacts
         run: |
