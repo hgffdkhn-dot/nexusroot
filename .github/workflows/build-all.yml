@@ -53,7 +53,7 @@ jobs:
           cargo ndk \
             -t ${{ matrix.rust_target }} \
             -o ../dist/daemon/${{ matrix.android_abi }} \
-            build --release
+            build --release --bin nexusrootd
 
       - name: Collect artifacts
         run: |
