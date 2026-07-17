@@ -9,14 +9,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import java.io.InputStream
-import java.io.OutputStream
+import nexusroot.Nexusroot    // 导入生成的 protobuf 类
 
 class SocketDaemonConnector : DaemonConnector {
 
     private var socket: LocalSocket? = null
-    private var inputStream: InputStream? = null
-    private var outputStream: OutputStream? = null
+    private var inputStream: java.io.InputStream? = null
+    private var outputStream: java.io.OutputStream? = null
 
     private suspend fun ensureConnected() {
         if (socket?.isConnected != true) {
@@ -33,11 +32,10 @@ class SocketDaemonConnector : DaemonConnector {
     private suspend fun sendRequest(request: Nexusroot.Request): Nexusroot.Response {
         ensureConnected()
         val data = request.toByteArray()
-        outputStream!!.write(data)
-        outputStream!!.flush()
-        // 读取响应（简化处理，假设一次读完）
+        outputStream?.write(data, 0, data.size) // 避免重载歧义
+        outputStream?.flush()
         val buf = ByteArray(4096)
-        val len = inputStream!!.read(buf)
+        val len = inputStream?.read(buf) ?: 0
         return Nexusroot.Response.parseFrom(buf, 0, len)
     }
 
@@ -60,20 +58,24 @@ class SocketDaemonConnector : DaemonConnector {
             ).build()
         val resp = sendRequest(req)
         if (resp.success && resp.hasWhitelist()) {
-            val list = resp.whitelist.itemsList.map {
-                WhitelistItem(it.packageName, "", it.uid, it.allowed) // appName 从 PM 获取，暂空
+            val list = resp.whitelist.itemsList.map { item ->
+                WhitelistItem(
+                    packageName = item.packageName,
+                    appName = "", // 后续通过 PackageManager 填充
+                    uid = item.uid,
+                    allowed = item.allowed
+                )
             }
             emit(list)
         }
     }
 
     override val logFlow: Flow<LogEntry> = flow {
-        // daemon 暂未实现实时日志推送，可在后续扩展
+        // 日志实时推送暂未实现，可留空
     }
 
     override suspend fun updateWhitelist(packageName: String, allowed: Boolean) {
-        // 需要先解析 packageName -> uid（可通过 PackageManager，这里简化）
-        // 暂时发送一个假 uid=0，实际应通过 APK 的 PackageManager 获取
+        // TODO: 需要从 PackageManager 获取正确的 UID，这里暂时写死 0 测试
         val item = Nexusroot.WhitelistItem.newBuilder()
             .setUid(0)
             .setPackageName(packageName)
@@ -82,15 +84,16 @@ class SocketDaemonConnector : DaemonConnector {
         val req = Nexusroot.Request.newBuilder()
             .setWhitelist(
                 Nexusroot.WhitelistRequest.newBuilder()
-                    .setAction(if (allowed) Nexusroot.WhitelistRequest.Action.ADD
-                               else Nexusroot.WhitelistRequest.Action.REMOVE)
+                    .setAction(
+                        if (allowed) Nexusroot.WhitelistRequest.Action.ADD
+                        else Nexusroot.WhitelistRequest.Action.REMOVE
+                    )
                     .addItems(item)
             ).build()
         sendRequest(req)
     }
 
     override suspend fun refreshDiagnostics(): Map<String, Any> {
-        // 暂通过 status 推断
         val req = Nexusroot.Request.newBuilder()
             .setStatus(Nexusroot.StatusRequest.getDefaultInstance())
             .build()
