@@ -9,7 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import nexusroot.Nexusroot    // 导入生成的 protobuf 类
+import nexusroot.Nexusroot   // 导入生成的 protobuf 类
 
 class SocketDaemonConnector : DaemonConnector {
 
@@ -32,11 +32,12 @@ class SocketDaemonConnector : DaemonConnector {
     private suspend fun sendRequest(request: Nexusroot.Request): Nexusroot.Response {
         ensureConnected()
         val data = request.toByteArray()
-        outputStream?.write(data, 0, data.size) // 避免重载歧义
+        outputStream?.write(data, 0, data.size) // 避免 write(ByteArray) 与 write(Int) 歧义
         outputStream?.flush()
         val buf = ByteArray(4096)
         val len = inputStream?.read(buf) ?: 0
-        return Nexusroot.Response.parseFrom(buf, 0, len)
+        val responseBytes = buf.copyOf(len)          // 只取有效部分
+        return Nexusroot.Response.parseFrom(responseBytes)
     }
 
     override val daemonStatusFlow: Flow<DaemonStatus> = flow {
@@ -71,11 +72,11 @@ class SocketDaemonConnector : DaemonConnector {
     }
 
     override val logFlow: Flow<LogEntry> = flow {
-        // 日志实时推送暂未实现，可留空
+        // 日志推送暂未实现
     }
 
     override suspend fun updateWhitelist(packageName: String, allowed: Boolean) {
-        // TODO: 需要从 PackageManager 获取正确的 UID，这里暂时写死 0 测试
+        // TODO: 从 PackageManager 获取真实的 UID，此处暂用 0
         val item = Nexusroot.WhitelistItem.newBuilder()
             .setUid(0)
             .setPackageName(packageName)
