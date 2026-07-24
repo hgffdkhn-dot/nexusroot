@@ -115,9 +115,9 @@ async fn handle_client(mut stream: tokio::net::UnixStream, state: Arc<Mutex<AppS
 
 #[tokio::main]
 async fn main() {
-    let socket_path = "/dev/socket/nxr_daemon";
+    let socket_path = "@nxr_daemon";
     // 如果之前存在，先删除
-    let _ = std::fs::remove_file(socket_path);
+    
 
     let listener = UnixListener::bind(socket_path).expect("Failed to bind socket");
     println!("nexusrootd listening on {}", socket_path);
