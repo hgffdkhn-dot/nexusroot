@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use std::os::unix::io::{FromRawFd, IntoRawFd};
 use std::os::unix::net::UnixListener as StdUnixListener;
 use std::sync::Arc;
 use tokio::net::UnixListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::sync::Mutex;
 use prost::Message;
+use socket2::{Socket, Domain, Type, SockAddr};
 
 // 包含通过 build.rs 生成的 protobuf 代码
 mod pb {
@@ -114,18 +116,29 @@ async fn handle_client(mut stream: tokio::net::UnixStream, state: Arc<Mutex<AppS
     }
 }
 
+/// 使用 socket2 创建抽象 Unix 域 socket
+fn create_abstract_listener(name: &str) -> StdUnixListener {
+    let socket = Socket::new(Domain::UNIX, Type::STREAM, None)
+        .expect("Failed to create socket");
+    // 抽象地址：前导 null 字节 + 名称
+    let addr = SockAddr::unix(format!("\0{}", name))
+        .expect("Failed to create abstract address");
+    socket.bind(&addr).expect("Failed to bind abstract socket");
+    socket.listen(128).expect("Failed to listen");
+    // 转换为标准库的 UnixListener
+    let fd = socket.into_raw_fd();
+    unsafe { StdUnixListener::from_raw_fd(fd) }
+}
+
 #[tokio::main]
 async fn main() {
-    // 正确的抽象 socket 地址：以 null 字节开头
-    let socket_path = "\0nxr_daemon";
+    let socket_name = "nxr_daemon";  // 抽象 socket 名，不包括 @
 
-    // 使用标准库绑定抽象 socket，然后转换为 tokio 的 UnixListener
-    let std_listener = StdUnixListener::bind(socket_path)
-        .expect("Failed to bind abstract socket");
+    let std_listener = create_abstract_listener(socket_name);
     std_listener.set_nonblocking(true).expect("Failed to set nonblocking");
     let listener = UnixListener::from_std(std_listener).expect("Failed to create tokio listener");
 
-    println!("nexusrootd listening on @nxr_daemon");
+    println!("nexusrootd listening on @{}", socket_name);
 
     let state = Arc::new(Mutex::new(AppState::new()));
 
