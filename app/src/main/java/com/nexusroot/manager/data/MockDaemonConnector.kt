@@ -15,7 +15,7 @@ class MockDaemonConnector : DaemonConnector {
         DaemonStatus(
             daemonAlive = true,
             suVersion = "NexusRoot v1.0.0",
-            suPath = "/data/adb/nxr/bin/nr-su",
+            suPath = "/debug_ramdisk/su",
             seContext = "u:r:nxr_daemon:s0"
         )
     )
