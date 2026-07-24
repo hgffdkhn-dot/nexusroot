@@ -30,7 +30,7 @@ class SocketDaemonConnector : DaemonConnector {
                 withContext(Dispatchers.IO) {
                     Log.d(TAG, "Attempting to connect to @nxr_daemon")
                     socket = LocalSocket().apply {
-                        connect(LocalSocketAddress("@nxr_daemon"))
+                        connect(LocalSocketAddress("/dev/socket/nxr_daemon"))
                     }
                     inputStream = socket!!.inputStream
                     outputStream = socket!!.outputStream
