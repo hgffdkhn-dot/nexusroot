@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::os::unix::net::UnixListener as StdUnixListener;
 use std::sync::Arc;
 use tokio::net::UnixListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -115,22 +116,27 @@ async fn handle_client(mut stream: tokio::net::UnixStream, state: Arc<Mutex<AppS
 
 #[tokio::main]
 async fn main() {
-    let socket_path = "@nxr_daemon";
-    // 如果之前存在，先删除
-    
+    // 正确的抽象 socket 地址：以 null 字节开头
+    let socket_path = "\0nxr_daemon";
 
-    let listener = UnixListener::bind(socket_path).expect("Failed to bind socket");
-    println!("nexusrootd listening on {}", socket_path);
+    // 使用标准库绑定抽象 socket，然后转换为 tokio 的 UnixListener
+    let std_listener = StdUnixListener::bind(socket_path)
+        .expect("Failed to bind abstract socket");
+    std_listener.set_nonblocking(true).expect("Failed to set nonblocking");
+    let listener = UnixListener::from_std(std_listener).expect("Failed to create tokio listener");
+
+    println!("nexusrootd listening on @nxr_daemon");
 
     let state = Arc::new(Mutex::new(AppState::new()));
 
     loop {
         match listener.accept().await {
             Ok((stream, _)) => {
+                println!("New client connected");
                 let state = Arc::clone(&state);
                 tokio::spawn(handle_client(stream, state));
             }
             Err(e) => eprintln!("Accept error: {}", e),
         }
     }
-          }
+}
