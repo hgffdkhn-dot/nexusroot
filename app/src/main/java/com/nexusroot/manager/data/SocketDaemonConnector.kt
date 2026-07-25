@@ -136,7 +136,7 @@ class SocketDaemonConnector : DaemonConnector {
             "daemon_pid" to "unknown",
             "socket_connected" to (socket?.isConnected ?: false),
             "last_error" to lastError,
-            "daemon_address" to "@nxr_daemon"
+            "daemon_address" to "/dev/socket/nxr_daemon"
         )
     }
 }
