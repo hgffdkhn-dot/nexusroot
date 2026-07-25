@@ -62,7 +62,7 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // ---- 新增：直接连接测试 ----
+                // ---- 直接连接测试 ----
                 Text("连接诊断", style = MaterialTheme.typography.titleMedium)
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -70,7 +70,7 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                     onClick = viewModel::testDirectConnect,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("测试直接连接 /dev/socket/nxr_daemon")
+                    Text("测试直接连接 /data/local/tmp/nxr_daemon")
                 }
 
                 if (state.directConnectResult.isNotEmpty()) {
@@ -91,6 +91,35 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // ---- 外部 root 检测 ----
+                Text("外部 Root 检测", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = viewModel::detectExternalRoot,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("检测外部 Root (su)")
+                }
+
+                if (state.externalRootResult.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer
+                        )
+                    ) {
+                        Text(
+                            text = state.externalRootResult,
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+                }
             }
         }
     }
@@ -106,10 +135,4 @@ fun StatusCard(title: String, ok: Boolean, modifier: Modifier = Modifier) {
             Text(if (ok) "正常" else "异常", style = MaterialTheme.typography.bodySmall)
         }
     }
-}
-Button(onClick = viewModel::detectExternalRoot) {
-    Text("检测外部 Root")
-}
-if (state.externalRootResult.isNotEmpty()) {
-    Card(...) { Text(state.externalRootResult) }
 }
