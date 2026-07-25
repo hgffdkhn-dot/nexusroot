@@ -17,6 +17,7 @@ class SocketDaemonConnector : DaemonConnector {
 
     companion object {
         private const val TAG = "NexusRootConn"
+        private const val SOCKET_PATH = "/dev/socket/nxr_daemon"
     }
 
     private var socket: LocalSocket? = null
@@ -25,12 +26,15 @@ class SocketDaemonConnector : DaemonConnector {
     private var lastError: String = ""
 
     private suspend fun ensureConnected(): Boolean {
+        // 强制输出版本标识，证明这是新代码
+        Log.e(TAG, "===== NEW BUILD v2 /dev/socket/nxr_daemon =====")
+
         if (socket?.isConnected != true) {
             try {
                 withContext(Dispatchers.IO) {
-                    Log.d(TAG, "Attempting to connect to @nxr_daemon")
+                    Log.d(TAG, "Attempting to connect to $SOCKET_PATH")
                     socket = LocalSocket().apply {
-                        connect(LocalSocketAddress("/dev/socket/nxr_daemon"))
+                        connect(LocalSocketAddress(SOCKET_PATH))
                     }
                     inputStream = socket!!.inputStream
                     outputStream = socket!!.outputStream
@@ -95,7 +99,7 @@ class SocketDaemonConnector : DaemonConnector {
             val list = resp.whitelist.itemsList.map { item ->
                 WhitelistItem(
                     packageName = item.packageName,
-                    appName = "", // 后续通过 PackageManager 填充
+                    appName = "",
                     uid = item.uid,
                     allowed = item.allowed
                 )
@@ -107,13 +111,12 @@ class SocketDaemonConnector : DaemonConnector {
     }
 
     override val logFlow: Flow<LogEntry> = flow {
-        // 日志实时推送暂未实现，可留空
+        // 暂不实现
     }
 
     override suspend fun updateWhitelist(packageName: String, allowed: Boolean) {
-        // TODO: 需要从 PackageManager 获取正确的 UID，这里暂时写死 0 测试
         val item = Nexusroot.WhitelistItem.newBuilder()
-            .setUid(0)
+            .setUid(0) // TODO: 替换为真实 UID
             .setPackageName(packageName)
             .setAllowed(allowed)
             .build()
@@ -130,13 +133,12 @@ class SocketDaemonConnector : DaemonConnector {
     }
 
     override suspend fun refreshDiagnostics(): Map<String, Any> {
-        // 先尝试连接，更新 lastError
         ensureConnected()
         return mapOf(
             "daemon_pid" to "unknown",
             "socket_connected" to (socket?.isConnected ?: false),
             "last_error" to lastError,
-            "daemon_address" to "/dev/socket/nxr_daemon"
+            "daemon_address" to SOCKET_PATH
         )
     }
 }
