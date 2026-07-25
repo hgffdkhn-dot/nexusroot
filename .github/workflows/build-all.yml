@@ -35,6 +35,15 @@ jobs:
         with:
           gradle-version: '8.2'
 
+      # ========== 新增：强制清除缓存 ==========
+      - name: Clean Gradle cache and project
+        run: |
+          ./gradlew --stop
+          rm -rf .gradle
+          rm -rf app/build
+          ./gradlew clean
+      # =====================================
+
       - name: Build APK
         run: gradle assembleDebug
 
@@ -43,7 +52,6 @@ jobs:
         with:
           targets: ${{ matrix.rust_target }}
 
-      # 安装 protoc（如果 apt 失败则用 cargo 安装）
       - name: Install protoc
         run: |
           if ! command -v protoc &> /dev/null; then
@@ -56,7 +64,6 @@ jobs:
             echo "protoc already installed"
           fi
 
-      # 安装 cargo-ndk，失败则手动 fallback
       - name: Install cargo-ndk (with fallback)
         id: cargo-ndk
         run: |
@@ -82,8 +89,6 @@ jobs:
         env:
           CARGO_TARGET_${{ matrix.rust_target }}_LINKER: ${{ env.CC_target }}
         run: |
-          # 注意：直接 cargo build 需要手动设置链接器，否则可能失败。
-          # 简单起见，这里假设已配置好目标工具链，或用 rustup 自带的 ld
           cargo build --target ${{ matrix.rust_target }} --release
           mkdir -p ../dist/daemon/${{ matrix.android_abi }}
           cp target/${{ matrix.rust_target }}/release/nexusrootd ../dist/daemon/${{ matrix.android_abi }}/
