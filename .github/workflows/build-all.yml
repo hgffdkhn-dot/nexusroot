@@ -41,7 +41,7 @@ jobs:
           gradle --stop
           rm -rf .gradle
           rm -rf app/build
-          gradlew clean
+          gradle clean
       # =====================================
 
       - name: Build APK
