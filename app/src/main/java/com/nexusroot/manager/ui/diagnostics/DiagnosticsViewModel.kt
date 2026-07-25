@@ -12,11 +12,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 data class DiagnosticsUiState(
     val diagnosticsData: Map<String, Any> = emptyMap(),
     val loading: Boolean = false,
-    val directConnectResult: String = ""
+    val directConnectResult: String = "",
+    val externalRootResult: String = ""
 )
 
 class DiagnosticsViewModel(private val connector: DaemonConnector) : ViewModel() {
@@ -42,7 +45,7 @@ class DiagnosticsViewModel(private val connector: DaemonConnector) : ViewModel()
             val result = withContext(Dispatchers.IO) {
                 try {
                     val socket = LocalSocket()
-                    socket.connect(LocalSocketAddress("/dev/socket/nxr_daemon"))
+                    socket.connect(LocalSocketAddress("/data/local/tmp/nxr_daemon"))
                     val connected = socket.isConnected
                     socket.close()
                     if (connected) "✅ 直接连接成功！守护进程可连通。"
@@ -54,18 +57,26 @@ class DiagnosticsViewModel(private val connector: DaemonConnector) : ViewModel()
             _uiState.update { it.copy(directConnectResult = result) }
         }
     }
-fun detectExternalRoot(): String {
-    return try {
-        val process = Runtime.getRuntime().exec(arrayOf("which", "su"))
-        val reader = java.io.BufferedReader(java.io.InputStreamReader(process.inputStream))
-        val suPath = reader.readLine()
-        if (suPath != null && suPath.isNotEmpty()) {
-            "检测到 su: $suPath\n你可以手动执行以下命令来测试守护进程：\n" +
-            "su -c 'chmod 777 /data/local/tmp/nxr_daemon && nc -U /data/local/tmp/nxr_daemon'"
-        } else {
-            "未检测到外部 root 管理器。"
+
+    fun detectExternalRoot() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(externalRootResult = "正在检测...") }
+            val result = withContext(Dispatchers.IO) {
+                try {
+                    val process = Runtime.getRuntime().exec(arrayOf("which", "su"))
+                    val reader = BufferedReader(InputStreamReader(process.inputStream))
+                    val suPath = reader.readLine()
+                    if (suPath != null && suPath.isNotEmpty()) {
+                        "检测到 su: $suPath\n你可以手动执行以下命令来测试守护进程：\n" +
+                        "su -c 'chmod 777 /data/local/tmp/nxr_daemon && nc -U /data/local/tmp/nxr_daemon'"
+                    } else {
+                        "未检测到外部 root 管理器。"
+                    }
+                } catch (e: Exception) {
+                    "检测失败: ${e.message}"
+                }
+            }
+            _uiState.update { it.copy(externalRootResult = result) }
         }
-    } catch (e: Exception) {
-        "检测失败: ${e.message}"
     }
 }
