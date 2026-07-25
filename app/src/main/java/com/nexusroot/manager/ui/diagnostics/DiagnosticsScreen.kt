@@ -29,21 +29,14 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
         }
     ) { padding ->
         if (state.loading) {
-            Box(
-                modifier = Modifier.fillMaxSize().padding(padding),
-                contentAlignment = Alignment.Center
-            ) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
                 CircularProgressIndicator()
             }
         } else {
             Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
+                Modifier.padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // 原有状态卡片
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     StatusCard("Daemon", state.diagnosticsData["daemon_pid"] != null, Modifier.weight(1f))
                     StatusCard("注入库", true, Modifier.weight(1f))
@@ -61,63 +54,30 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 }
 
                 Spacer(modifier = Modifier.height(24.dp))
-
-                // ---- 直接连接测试 ----
                 Text("连接诊断", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = viewModel::testDirectConnect,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Button(onClick = viewModel::testDirectConnect, modifier = Modifier.fillMaxWidth()) {
                     Text("测试直接连接 /data/local/tmp/nxr_daemon")
                 }
-
                 if (state.directConnectResult.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = if (state.directConnectResult.contains("✅"))
-                                MaterialTheme.colorScheme.primaryContainer
-                            else
-                                MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Text(
-                            text = state.directConnectResult,
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyLarge
-                        )
+                    Card(colors = CardDefaults.cardColors(
+                        containerColor = if (state.directConnectResult.contains("✅")) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.errorContainer
+                    )) {
+                        Text(state.directConnectResult, modifier = Modifier.padding(16.dp))
                     }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-
-                // ---- 外部 root 检测 ----
-                Text("外部 Root 检测", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = viewModel::detectExternalRoot,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("检测外部 Root (su)")
+                Text("外部 Root 利用", style = MaterialTheme.typography.titleMedium)
+                Button(onClick = viewModel::detectExternalRoot, modifier = Modifier.fillMaxWidth()) {
+                    Text("检测外部 su")
                 }
-
+                Button(onClick = viewModel::testWithSu, modifier = Modifier.fillMaxWidth()) {
+                    Text("通过 su 测试守护进程连接")
+                }
                 if (state.externalRootResult.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        )
-                    ) {
-                        Text(
-                            text = state.externalRootResult,
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodyMedium
-                        )
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                        Text(state.externalRootResult, modifier = Modifier.padding(16.dp))
                     }
                 }
             }
