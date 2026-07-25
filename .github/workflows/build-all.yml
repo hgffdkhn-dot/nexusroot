@@ -38,7 +38,7 @@ jobs:
       # ========== 新增：强制清除缓存 ==========
       - name: Clean Gradle cache and project
         run: |
-          gradlew --stop
+          gradle --stop
           rm -rf .gradle
           rm -rf app/build
           gradlew clean
