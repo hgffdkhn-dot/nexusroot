@@ -107,3 +107,9 @@ fun StatusCard(title: String, ok: Boolean, modifier: Modifier = Modifier) {
         }
     }
 }
+Button(onClick = viewModel::detectExternalRoot) {
+    Text("检测外部 Root")
+}
+if (state.externalRootResult.isNotEmpty()) {
+    Card(...) { Text(state.externalRootResult) }
+}
