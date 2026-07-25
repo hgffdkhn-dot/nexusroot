@@ -27,16 +27,25 @@ jobs:
         with:
           gradle-version: '8.2'
 
+      # 强制清除缓存，确保旧代码不残留
+      - name: Clean Gradle cache and project
+        run: |
+          gradle --stop
+          rm -rf .gradle
+          rm -rf app/build
+          gradle clean
+
       - name: Build APK
         run: gradle assembleDebug
 
+      # 检测 APK 是否仍含有旧 socket 路径
       - name: Check APK for old socket path
         run: |
           APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
           echo "Checking $APK_PATH for old socket path..."
           if unzip -p "$APK_PATH" classes*.dex 2>/dev/null | strings | grep -q "/dev/socket/nxr_daemon"; then
             echo "ERROR: APK still contains old socket path /dev/socket/nxr_daemon"
-            echo "Please run './gradlew clean' and delete .gradle cache, then rebuild."
+            echo "Please verify source code has been updated and cache cleared."
             exit 1
           fi
           echo "APK check passed: no old socket path found."
