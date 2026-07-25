@@ -119,30 +119,28 @@ async fn handle_client(mut stream: tokio::net::UnixStream, state: Arc<Mutex<AppS
 #[tokio::main]
 async fn main() {
     let socket_path = "/dev/socket/nxr_daemon";
-
-    // 确保目录存在
     let _ = std::fs::create_dir_all("/dev/socket");
-    // 删除可能残留的旧 socket 文件
     let _ = std::fs::remove_file(socket_path);
 
-    // 绑定并开始监听
-    let listener = UnixListener::bind(socket_path).expect("Failed to bind socket");
+    println!("Attempting to bind to {}", socket_path);
+    let listener = UnixListener::bind(socket_path).expect("Bind failed");
+    println!("Bind successful");
 
-    // 设置 socket 文件权限为 777，让所有进程都可连接
     if let Ok(metadata) = std::fs::metadata(socket_path) {
         let mut perms = metadata.permissions();
         perms.set_mode(0o777);
         let _ = std::fs::set_permissions(socket_path, perms);
+        println!("Permissions set to 777");
     }
-
-    println!("nexusrootd listening on {}", socket_path);
 
     let state = Arc::new(Mutex::new(AppState::new()));
 
+    println!("Entering accept loop...");
     loop {
+        println!("Waiting for client...");
         match listener.accept().await {
-            Ok((stream, _)) => {
-                println!("New client connected");
+            Ok((stream, addr)) => {
+                println!("Accepted connection from {:?}", addr);
                 let state = Arc::clone(&state);
                 tokio::spawn(handle_client(stream, state));
             }
