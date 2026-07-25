@@ -17,7 +17,7 @@ class SocketDaemonConnector : DaemonConnector {
 
     companion object {
         private const val TAG = "NexusRootConn"
-        private const val SOCKET_PATH = " /data/local/tmp/nxr_daemon"
+        private const val SOCKET_PATH =  "/data/data/com.nexusroot.manager/files/nxr_daemon"
     }
 
     private var socket: LocalSocket? = null
