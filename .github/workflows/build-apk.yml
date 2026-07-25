@@ -27,42 +27,8 @@ jobs:
         with:
           gradle-version: '8.2'
 
-      - name: Clean Gradle cache and project
-        run: |
-          gradle --stop
-          rm -rf .gradle
-          rm -rf app/build
-          gradle clean
-
-      # ---------- 自动替换旧路径 ----------
-      - name: Auto-fix old socket path in source files
-        run: |
-          echo "Replacing /dev/socket/nxr_daemon -> /data/local/tmp/nxr_daemon"
-          find . -type f \( -name "*.kt" -o -name "*.java" -o -name "*.xml" -o -name "*.proto" \) \
-            -exec sed -i 's|/dev/socket/nxr_daemon|/data/local/tmp/nxr_daemon|g' {} +
-          echo "Fix applied."
-
-      # 验证是否还有残留（此时不应该再有）
-      - name: Verify no old path remains
-        run: |
-          if grep -rq "/dev/socket/nxr_daemon" --include="*.kt" --include="*.java" --include="*.xml" --include="*.proto" .; then
-            echo "ERROR: Old socket path still exists after auto-fix!"
-            exit 1
-          fi
-          echo "All old paths have been replaced."
-
       - name: Build APK
         run: gradle assembleDebug
-
-      # 可选：再次检查 APK 内是否干净（双重保险）
-      - name: Check APK for old socket path
-        run: |
-          APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
-          if unzip -p "$APK_PATH" classes*.dex 2>/dev/null | strings | grep -q "/dev/socket/nxr_daemon"; then
-            echo "ERROR: APK still contains old socket path!"
-            exit 1
-          fi
-          echo "APK verified clean."
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
