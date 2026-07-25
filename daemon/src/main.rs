@@ -118,8 +118,8 @@ async fn handle_client(mut stream: tokio::net::UnixStream, state: Arc<Mutex<AppS
 // ---------- 主入口 ----------
 #[tokio::main]
 async fn main() {
-    let socket_path = "/dev/socket/nxr_daemon";
-    let _ = std::fs::create_dir_all("/dev/socket");
+    let socket_path = "/data/local/tmp/nxr_daemon";
+    let _ = std::fs::create_dir_all("/data/local/tmp");
     let _ = std::fs::remove_file(socket_path);
 
     println!("Attempting to bind to {}", socket_path);
