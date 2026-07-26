@@ -56,7 +56,7 @@ fun DiagnosticsScreen(viewModel: DiagnosticsViewModel) {
                 Spacer(modifier = Modifier.height(24.dp))
                 Text("连接诊断", style = MaterialTheme.typography.titleMedium)
                 Button(onClick = viewModel::testDirectConnect, modifier = Modifier.fillMaxWidth()) {
-                    Text("测试直接连接 /data/local/tmp/nxr_daemon")
+                    Text("测试直接连接  /data/data/com.nexusroot.manager/files/nxr_daemon")
                 }
                 if (state.directConnectResult.isNotEmpty()) {
                     Card(colors = CardDefaults.cardColors(
