@@ -45,7 +45,7 @@ class DiagnosticsViewModel(private val connector: DaemonConnector) : ViewModel()
             val result = withContext(Dispatchers.IO) {
                 try {
                     val socket = LocalSocket()
-                    socket.connect(LocalSocketAddress("/data/local/tmp/nxr_daemon"))
+                    socket.connect(LocalSocketAddress(" /data/data/com.nexusroot.manager/files/nxr_daemon"))
                     val connected = socket.isConnected
                     socket.close()
                     if (connected) "✅ 直接连接成功！守护进程可连通。"
@@ -91,8 +91,8 @@ class DiagnosticsViewModel(private val connector: DaemonConnector) : ViewModel()
                     val su = if (suPath.isNullOrEmpty()) "su" else suPath
 
                     // 用 su 执行测试命令：确保权限并尝试连接
-                    val cmd = "$su -c 'chmod 777 /data/local/tmp/nxr_daemon 2>/dev/null; " +
-                            "printf \"\" | nc -U /data/local/tmp/nxr_daemon 2>&1'"
+                    val cmd = "$su -c 'chmod 777  /data/data/com.nexusroot.manager/files/nxr_daemon 2>/dev/null; " +
+                            "printf \"\" | nc -U  /data/data/com.nexusroot.manager/files/nxr_daemon 2>&1'"
                     val process = Runtime.getRuntime().exec(arrayOf("sh", "-c", cmd))
                     val output = process.inputStream.bufferedReader().readText()
                     val error = process.errorStream.bufferedReader().readText()
